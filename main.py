@@ -1,9 +1,11 @@
 from os import listdir
 from os.path import isfile, join
+import os
 import configparser
 import pyCalNotifier
 
-configPath = 'config'
+appDIR = os.path.dirname(__file__)
+configPath = join(appDIR, 'config')
 
 allConfigFiles = [f for f in listdir(
     configPath) if (isfile(join(configPath, f)) and f.endswith('.ini'))]
