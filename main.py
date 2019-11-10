@@ -19,9 +19,11 @@ for f in allConfigFiles:
 
     outputType = pyCalNotifier.OutputTarget.fromString(
         config['output']['type'])
+    print("输出配置：", outputType)
 
     if outputType == pyCalNotifier.OutputTarget.SCREEN:
         print(pyCalNotifier.events2PlainText(events))
+
     elif outputType == pyCalNotifier.OutputTarget.EMAIL:
         pyCalNotifier.emailBySMTP(
             host=config['output']['em_host'],
@@ -31,6 +33,12 @@ for f in allConfigFiles:
             sender=config['output']['em_sender'],
             receivers=config['output']['em_receivers'].split('!'),
             content=pyCalNotifier.events2PlainText(events))
-    elif outputType == pyCalNotifier.OutputTarget.FILE:
+
+    elif outputType == pyCalNotifier.OutputTarget.PLAINTEXTFILE:
         with open(config['output']['fileTarget'], "w") as outputFile:
             outputFile.write(pyCalNotifier.events2PlainText(events))
+
+    elif outputType == pyCalNotifier.OutputTarget.KDETODOLIST:
+        with open(config['output']['fileTarget'], "w") as outputFile:
+            outputFile.write(pyCalNotifier.events2KDETodoList(
+                events, config["server"]["calendar"]))
