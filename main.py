@@ -34,7 +34,9 @@ for f in allConfigFiles:
             pw=config['output']['em_pw'],
             sender=config['output']['em_sender'],
             receivers=config['output']['em_receivers'].split('!'),
-            content=pyCalNotifier.events2PlainText(events))
+            content=pyCalNotifier.events2PlainText(events),
+            retries=int(config['output']['em_retry']),
+            retryInterval=int(config['output']['em_retry_interval']))
 
     elif outputType == pyCalNotifier.OutputTarget.PLAINTEXTFILE:
         with open(config['output']['fileTarget'], "w") as outputFile:

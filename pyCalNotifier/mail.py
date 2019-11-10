@@ -2,9 +2,13 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 import datetime
+import time
 
 
-def emailBySMTP(host, port, user, pw, sender, receivers, content):
+def emailBySMTP(host, port, user, pw, sender, receivers, content, retries, retryInterval):
+
+    assert isinstance(retries, int)
+    assert isinstance(retryInterval, int)
 
     message = MIMEText(content, 'plain', 'utf-8')
     message['From'] = sender
@@ -12,16 +16,26 @@ def emailBySMTP(host, port, user, pw, sender, receivers, content):
 
     message['Subject'] = '%s日程提醒' % datetime.date.today()
 
-    try:
-        mailBox = smtplib.SMTP_SSL(host)
-        mailBox.connect(host=host, port=port)
-        mailBox.login(user, pw)
-        mailBox.sendmail(sender, receivers, message.as_string())
-        mailBox.quit()
+    mail_success = False
+    for tries in range(1, retries+1):
+        if mail_success:
+            break
 
-        print('邮件发送成功')
-    except smtplib.SMTPException as e:
-        print('邮件发送失败：\n', e)
+        print("第%d次尝试发送邮件……" % tries)
+
+        try:
+            mailBox = smtplib.SMTP_SSL(host)
+            mailBox.connect(host=host, port=port)
+            mailBox.login(user, pw)
+            mailBox.sendmail(sender, receivers, message.as_string())
+            mailBox.quit()
+
+            mail_success = True
+
+            print('邮件发送成功')
+        except smtplib.SMTPException as e:
+            print('邮件发送失败：\n', e)
+            time.sleep(retryInterval)
 
 
 if __name__ == '__main__':
