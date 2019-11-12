@@ -10,11 +10,14 @@ def emailBySMTP(host, port, user, pw, sender, receivers, content, retries, retry
     assert isinstance(retries, int)
     assert isinstance(retryInterval, int)
 
+    content += ("\n发送于：" + str(datetime.datetime.now()))
+
     message = MIMEText(content, 'plain', 'utf-8')
     message['From'] = sender
     message['To'] = receivers[0]
 
-    message['Subject'] = '%s日程提醒' % datetime.date.today()
+    message['Subject'] = '%s待办提醒：共%d项' % (
+        datetime.date.today(), content.count('>'))
 
     mail_success = False
     for tries in range(1, retries+1):
