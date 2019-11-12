@@ -3,12 +3,15 @@ from os.path import isfile, join
 import os
 import configparser
 import pyCalNotifier
+import datetime
 
 appDIR = os.path.dirname(__file__)
 configPath = join(appDIR, 'config')
 
 allConfigFiles = [f for f in listdir(
     configPath) if (isfile(join(configPath, f)) and f.endswith('.ini'))]
+
+print("程序启动于", datetime.datetime.now())
 
 for f in allConfigFiles:
     configFilePath = join(configPath, f)
