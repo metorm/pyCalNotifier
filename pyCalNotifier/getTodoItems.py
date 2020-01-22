@@ -5,7 +5,7 @@ from ics import Calendar
 
 def getTodoItems(configFile):
     config = configparser.ConfigParser()
-    config.read(configFile)
+    config.read(configFile, encoding='utf-8')
 
     config_url = config["server"]["url"]
     config_calendarName = config["server"]["calendar"]

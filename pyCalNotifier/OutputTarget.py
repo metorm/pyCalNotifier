@@ -16,6 +16,9 @@ class OutputTarget(Enum):
     # see https://github.com/Zren/plasma-applet-todolist
     KDETODOLIST = 'KDETodoList'
 
+    # render text on windows desktop wallpaper
+    WINWALLPAPER = 'WinWallPaper'
+
     @staticmethod
     def fromString(str):
         if str.lower() == 'screen':
@@ -26,5 +29,7 @@ class OutputTarget(Enum):
             return OutputTarget.PLAINTEXTFILE
         elif str.lower() == 'kdetodolist':
             return OutputTarget.KDETODOLIST
+        elif str.lower() == 'winwallpaper':
+            return OutputTarget.WINWALLPAPER
         else:
             raise NotImplementedError
