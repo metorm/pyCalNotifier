@@ -60,20 +60,21 @@ for f in allConfigFiles:
             imgWidth, imgHeight = img.size
             textToRender = pyCalNotifier.events2PlainText(events)
 
-            # check current file to avoid unnecessary write
-            doRender = False
             tempDIR = os.environ['TEMP']
+            tempImgPath = os.path.join(tempDIR, 'pyCalNotifier.png')
             tempLogPath = os.path.join(tempDIR, "pyCalNotifier.log")
-            if os.path.exists(tempLogPath):
+
+            # check current file to avoid unnecessary write
+            cacheOK = (os.path.exists(tempLogPath)
+                       and os.path.exists(tempImgPath))
+            if cacheOK:  # more check
                 print("找到缓存文件 %s" % tempLogPath)
                 with open(tempLogPath, 'r') as f:
                     logFileContent = f.read()
                     if not logFileContent == textToRender:
-                        doRender = True
-            else:
-                doRender = True
+                        cacheOK = False
 
-            if not doRender:
+            if cacheOK:
                 print("缓存匹配，未执行文件写入.")
             else:
                 print("缓存不匹配，继续执行 ...")
@@ -112,8 +113,10 @@ for f in allConfigFiles:
                 draw = ImageDraw.Draw(img)
                 draw.text((imgWidth - textWidth - 10, 10),
                           textToRender, fill=textColor, font=ttfront)
-                tempImgPath = os.path.join(tempDIR, 'pyCalNotifier.png')
                 img.save(tempImgPath)
                 import ctypes
+                # SPI_... : fetched from winuser.h
+                SPI_SETDESKWALLPAPER = 0x0014
+                SPIF_UPDATEINIFILE = 0x0001
                 ctypes.windll.user32.SystemParametersInfoW(
-                    20, 0, tempImgPath, 0)
+                    SPI_SETDESKWALLPAPER, 0, tempImgPath, SPIF_UPDATEINIFILE)
