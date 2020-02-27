@@ -4,7 +4,8 @@ import os
 import configparser
 import pyCalNotifier
 import datetime
-from PIL import Image, ImageDraw, ImageFont 
+import sys
+from PIL import Image, ImageDraw, ImageFont
 
 appDIR = os.path.dirname(__file__)
 configPath = join(appDIR, 'config')
@@ -48,9 +49,10 @@ for f in allConfigFiles:
 
     elif outputType == pyCalNotifier.OutputTarget.KDETODOLIST:
         with open(config['output']['fileTarget'], "w") as outputFile:
+            # TODO: check current file to avoid unnecessary write
             outputFile.write(pyCalNotifier.events2KDETodoList(
                 events, config["server"]["calendar"]))
-    
+
     elif outputType == pyCalNotifier.OutputTarget.WINWALLPAPER:
         # get original wall paper
         inputImgPath = config['output']['wwp_path']
@@ -58,31 +60,60 @@ for f in allConfigFiles:
             imgWidth, imgHeight = img.size
             textToRender = pyCalNotifier.events2PlainText(events)
 
-            draw = ImageDraw.Draw(img)
-            ttfront = ImageFont.truetype('simhei.ttf', int(config['output']['wwp_font_size']))
+            # check current file to avoid unnecessary write
+            doRender = False
+            tempDIR = os.environ['TEMP']
+            tempLogPath = os.path.join(tempDIR, "pyCalNotifier.log")
+            if os.path.exists(tempLogPath):
+                print("找到缓存文件 %s" % tempLogPath)
+                with open(tempLogPath, 'r') as f:
+                    logFileContent = f.read()
+                    if not logFileContent == textToRender:
+                        doRender = True
+            else:
+                doRender = True
 
-            # compute the required space width
-            textLines = textToRender.split('\n')
-            textWidth = max([ttfront.getsize(s)[0] for s in textLines])
+            if not doRender:
+                print("缓存匹配，未执行文件写入.")
+            else:
+                print("缓存不匹配，继续执行 ...")
 
-            # color
-            hexTextColor = config['output']['wwp_text_color']
-            textColor = tuple(int(hexTextColor[i:i+2], 16) for i in (0, 2, 4))
+                with open(tempLogPath, 'w') as f:
+                    f.write(textToRender)
 
-            # the shadow block
-            hexShadowColor = config['output']['wwp_shadow_color']
-            shadowColor = tuple(int(hexShadowColor[i:i+2], 16) for i in (0, 2, 4))
-            overlay = Image.new('RGBA', img.size, shadowColor+(0,))
-            draw = ImageDraw.Draw(overlay)  # Create a context for drawing things on it.
-            opacity = int(255 * float(config['output']['wwp_shadow_opacity']))
-            draw.rectangle(((imgWidth - textWidth - 10 - 10, 0), (imgWidth, imgHeight)), fill=shadowColor+(opacity,))
+                draw = ImageDraw.Draw(img)
+                ttfront = ImageFont.truetype(
+                    'simhei.ttf', int(config['output']['wwp_font_size']))
 
-            img = img.convert("RGBA")
-            img = Image.alpha_composite(img, overlay)
+                # compute the required space width
+                textLines = textToRender.split('\n')
+                textWidth = max([ttfront.getsize(s)[0] for s in textLines])
 
-            draw = ImageDraw.Draw(img)
-            draw.text((imgWidth - textWidth - 10, 10), textToRender, fill=textColor, font=ttfront)
-            tempImgPath = os.path.join(os.environ['TEMP'], 'pyCalNotifier.png')
-            img.save(tempImgPath)
-            import ctypes
-            ctypes.windll.user32.SystemParametersInfoW(20, 0, tempImgPath , 0)
+                # color
+                hexTextColor = config['output']['wwp_text_color']
+                textColor = tuple(
+                    int(hexTextColor[i:i+2], 16) for i in (0, 2, 4))
+
+                # the shadow block
+                hexShadowColor = config['output']['wwp_shadow_color']
+                shadowColor = tuple(
+                    int(hexShadowColor[i:i+2], 16) for i in (0, 2, 4))
+                overlay = Image.new('RGBA', img.size, shadowColor+(0,))
+                # Create a context for drawing things on it.
+                draw = ImageDraw.Draw(overlay)
+                opacity = int(
+                    255 * float(config['output']['wwp_shadow_opacity']))
+                draw.rectangle(((imgWidth - textWidth - 10 - 10, 0),
+                                (imgWidth, imgHeight)), fill=shadowColor+(opacity,))
+
+                img = img.convert("RGBA")
+                img = Image.alpha_composite(img, overlay)
+
+                draw = ImageDraw.Draw(img)
+                draw.text((imgWidth - textWidth - 10, 10),
+                          textToRender, fill=textColor, font=ttfront)
+                tempImgPath = os.path.join(tempDIR, 'pyCalNotifier.png')
+                img.save(tempImgPath)
+                import ctypes
+                ctypes.windll.user32.SystemParametersInfoW(
+                    20, 0, tempImgPath, 0)
